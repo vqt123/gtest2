@@ -159,6 +159,9 @@ The AI agent must verify and guide installation of dependencies based on the use
 - Reset/restart scripts for development workflow
 - Build configuration with source maps
 - Development server with auto-reload capability
+- **CLAUDE.md operational guidelines file** - MANDATORY for agent compliance
+- **Screenshot testing infrastructure** for visual validation
+- **Single command teardown/rebuild** for complete environment reset
 
 ### Game Mechanics Specifications
 - **Grid System**: Fixed-size grid (recommend 20x20)
@@ -187,13 +190,51 @@ The completed project should:
 7. Provide smooth, responsive user experience
 
 ## Development Approach
-1. Set up development environment with containerized services
-2. Build core server with database connections
-3. Implement game logic with real-time communication
-4. Create client interface with input handling
-5. Test multiplayer functionality thoroughly
+1. **FIRST**: Create CLAUDE.md with operational enforcement rules (copy from template)
+2. Set up development environment with containerized services
+3. Build core server with database connections
+4. Implement game logic with real-time communication
+5. Create client interface with input handling
+6. **Add screenshot testing infrastructure** for visual validation
+7. **Create single command for complete teardown/rebuild**
+8. **MANDATORY**: Run full test suite and verify all tests pass
+9. **MANDATORY**: Test core game mechanics manually (movement, collection, multiplayer)
+10. **MANDATORY**: Fix any failing tests before considering project complete
 
 ## AI Agent Operational Protocol
+
+### 🚨 MANDATORY FIRST STEP - CLAUDE.md CREATION 🚨
+
+**BEFORE ANY CODING**: AI must create CLAUDE.md file in project root with operational enforcement rules.
+
+**CLAUDE.md REQUIREMENTS:**
+1. Copy the entire "🚨 CRITICAL VIOLATION ENFORCEMENT" section from this document
+2. Add project-specific command logging requirements
+3. Include forbidden commands list relevant to chosen technology stack
+4. Add violation detection and recovery procedures
+5. Ensure CLAUDE.md is referenced throughout the session
+
+**TEMPLATE CLAUDE.md STRUCTURE:**
+```markdown
+# AI Assistant Operational Guidelines
+
+## 🚨 CRITICAL VIOLATION ENFORCEMENT 🚨
+[Copy enforcement section from create.md]
+
+## Core Operational Rules
+[Copy rules from create.md]
+
+## Project-Specific Guidelines
+- Command logging: All commands must append to logs/command.log
+- Reset commands: [project-specific reset commands]
+- Background execution: [project-specific background patterns]
+- Test commands: [project-specific non-interactive flags]
+
+## Single Command Operations
+- Complete teardown/rebuild: [single command for full reset]
+- Quick restart: [quick service restart]
+- Test run: [full test suite with proper flags]
+```
 
 ### Dependency Management Protocol
 
@@ -239,25 +280,107 @@ The completed project should:
 - **Scripts must complete and return to prompt** - No hanging processes
 - **Use background execution (nohup &, screen, tmux) for any long-running processes**
 
+### Single Command Operation Requirements - MANDATORY
+**MUST CREATE**: One command that performs complete teardown and rebuild of entire environment.
+
+**SINGLE COMMAND SPECIFICATIONS:**
+- **Command name**: `npm run reset` (Node.js) or equivalent for chosen stack
+- **Complete teardown**: Kill all processes, remove containers, clean volumes, clear logs
+- **Environment rebuild**: Restart services, initialize databases, build code
+- **Dependency check**: Verify all services are healthy before completion
+- **Background execution**: Start servers in background, never hang terminal
+- **Comprehensive logging**: Log every step for debugging
+- **Return to prompt**: Command must complete and return control
+
+**IMPLEMENTATION EXAMPLES:**
+- **Node.js**: `npm run reset` calls script that does full teardown/rebuild
+- **Python**: `python manage.py reset_all` for Django projects
+- **Java**: `./gradlew resetEnvironment` for Gradle projects
+- **Go**: `make reset` using Makefile
+- **Rust**: `cargo run --bin reset` for custom reset binary
+
+**SCRIPT REQUIREMENTS:**
+1. Stop all project processes (targeted, not global)
+2. Stop and remove all containers/services
+3. Clean volumes and temporary data
+4. Restart infrastructure services
+5. Wait for services to be healthy
+6. Initialize/migrate databases
+7. Build application code
+8. Start application in background
+9. Verify everything is working
+10. Return to prompt with status message
+
 ### Development Server Management
 - **Development servers MUST run in background during testing**
 - **Use separate commands for starting servers interactively vs testing**
 - **Scripts should prepare environment but not start hanging processes**
 - **Provide clear instructions for manual server startup when needed**
 
-### Testing Protocol
+### Testing Protocol - MANDATORY EXECUTION
 - **ALWAYS use fresh restart before testing** - No status checking allowed
 - **Use non-interactive flags to prevent hanging** - Examples: `--reporter=line`, `--tb=short`, `--quiet`, `-v`
 - **Start servers in background before running tests**
 - **Never run tests against potentially stale environments**
 - **Report clear success/failure metrics and remaining issues**
 
+### Test Execution Requirements - ZERO TOLERANCE
+**MANDATORY**: Agent must run tests at the end of development and ensure they pass.
+
+**TEST EXECUTION PROTOCOL:**
+1. **Fresh environment restart** before running any tests
+2. **Run complete test suite** using non-interactive flags
+3. **Verify test results** - minimum 80% pass rate required
+4. **Fix all failing tests** before considering project complete
+5. **Manual verification** of core game mechanics
+6. **Screenshot validation** of key functionality
+
+**CORE MECHANICS TESTING CHECKLIST:**
+- ✅ Player can join game with username
+- ✅ Player movement works in all directions
+- ✅ **Money/items spawn and are visible**
+- ✅ **Money/items can be collected by walking onto them**
+- ✅ **Player money total updates when collecting items**
+- ✅ Multiple players can join simultaneously
+- ✅ Real-time updates work between players
+- ✅ Leaderboard displays and updates
+- ✅ Database persistence works
+
+**FAILURE SCENARIOS THAT MUST BE CAUGHT:**
+- Money acts as obstacles instead of collectibles
+- Collection detection not working
+- Real-time updates not syncing between players
+- Database not persisting player progress
+- Tests passing but game mechanics broken
+
+**IF TESTS FAIL:**
+1. Do NOT consider project complete
+2. Investigate and fix root cause
+3. Re-run full test suite
+4. Verify manual functionality
+5. Only complete when all tests pass AND manual verification succeeds
+
+### Screenshot Testing Requirements
+- **Create screenshots directory** for test visual validation
+- **Add screenshot capture to tests** for debugging failures
+- **Configure test framework** to save screenshots on test failures
+- **Include visual regression testing** for UI components
+- **Examples by framework:**
+  - **Playwright**: `await page.screenshot({ path: 'screenshots/test-name.png' })`
+  - **Cypress**: `cy.screenshot('test-name')`
+  - **Selenium**: `driver.save_screenshot('screenshots/test-name.png')`
+- **Git ignore screenshots** but preserve directory structure
+
 ### Command Execution Safety Rules
 1. **Fresh Start Mandatory**: Always use project reset/restart commands before testing
 2. **Background Processes**: Any long-running command must use background execution (`nohup ... &`, `screen`, `tmux`) or be in separate scripts
 3. **No Status Checking**: Replace status checks with restart operations
-4. **Command Justification**: Every command must be justified against operational rules
+4. **Command Justification**: Every command must be justified against operational rules using CLAUDE.md
 5. **Logging Required**: All commands must include appropriate logging for monitoring
+6. **CLAUDE.md Reference**: Agent must reference CLAUDE.md before every command execution
+7. **Screenshot Documentation**: Tests must capture screenshots for debugging and validation
+8. **Test Execution Mandatory**: Agent must run full test suite before considering project complete
+9. **Manual Verification Required**: Agent must verify core game mechanics work as expected
 
 ## Expected Outcomes
 - High test pass rate (target 80%+ of test scenarios)
@@ -265,3 +388,10 @@ The completed project should:
 - Functional real-time multiplayer gameplay
 - Persistent data storage working correctly
 - Robust reset and restart mechanisms
+- **CLAUDE.md file created and referenced throughout session**
+- **Screenshot testing infrastructure working**
+- **Single command complete teardown/rebuild functional**
+- **Agent follows command justification protocol consistently**
+- **🚨 CRITICAL: Full test suite executed and passing**
+- **🚨 CRITICAL: Core game mechanics manually verified working**
+- **🚨 CRITICAL: Money/item collection functionality confirmed**
