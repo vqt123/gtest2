@@ -1,0 +1,37 @@
+canvas {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    border: 2px solid #4a5568;
+}
+
+.player-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background-color: #2d3748;
+    border-radius: 0.375rem;
+}
+
+.player-color-indicator {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.125rem;
+    margin-right: 0.5rem;
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background-color: #2d3748;
+    border-radius: 0.375rem;
+}
+
+.leaderboard-rank {
+    font-weight: 600;
+    color: #a0aec0;
+    margin-right: 0.5rem;
+}

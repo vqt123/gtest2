@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplayer Grid Game</title>
+    <link href="/css/style.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold text-center mb-8">Multiplayer Grid Game</h1>
+        
+        <div id="login-screen" class="max-w-md mx-auto">
+            <div class="bg-gray-800 p-8 rounded-lg shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4">Enter Username</h2>
+                <input 
+                    type="text" 
+                    id="username-input" 
+                    class="w-full px-4 py-2 bg-gray-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your username"
+                    maxlength="20"
+                >
+                <button 
+                    id="join-btn" 
+                    class="w-full mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded font-semibold transition duration-200"
+                >
+                    Join Game
+                </button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="hidden">
+            <div class="flex flex-col lg:flex-row gap-8">
+                <div class="flex-1">
+                    <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
+                        <canvas id="game-canvas" width="600" height="600" class="w-full max-w-2xl mx-auto"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <p class="text-lg">Use WASD or Arrow Keys to move</p>
+                        <p class="mt-2">Your Money: $<span id="player-money">0</span></p>
+                    </div>
+                </div>
+                
+                <div class="lg:w-80">
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold mb-4">Players Online</h3>
+                        <div id="players-list" class="space-y-2"></div>
+                    </div>
+                    
+                    <div class="bg-gray-800 p-6 rounded-lg shadow-lg mt-4">
+                        <h3 class="text-xl font-semibold mb-4">Top Players</h3>
+                        <div id="leaderboard" class="space-y-2">
+                            <p class="text-gray-500">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/game.js"></script>
+</body>
+</html>
