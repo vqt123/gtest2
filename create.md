@@ -154,13 +154,13 @@ The AI agent must verify and guide installation of dependencies based on the use
 - Relational integrity between entities
 
 ### Development Infrastructure
+- **CLAUDE.md operational guidelines file** - MANDATORY first step for agent compliance
+- **Screenshot testing infrastructure** - MANDATORY second step for visual validation
 - Container orchestration for database and cache services
 - Command logging system for monitoring all operations
 - Reset/restart scripts for development workflow
 - Build configuration with source maps
 - Development server with auto-reload capability
-- **CLAUDE.md operational guidelines file** - MANDATORY for agent compliance
-- **Screenshot testing infrastructure** for visual validation
 - **Single command teardown/rebuild** for complete environment reset
 
 ### Game Mechanics Specifications
@@ -192,14 +192,16 @@ The completed project should:
 ## Development Approach
 1. **FIRST**: Create CLAUDE.md with operational enforcement rules (copy from template)
 2. Set up development environment with containerized services
-3. Build core server with database connections
-4. Implement game logic with real-time communication
-5. Create client interface with input handling
-6. **Add screenshot testing infrastructure** for visual validation
-7. **Create single command for complete teardown/rebuild**
-8. **MANDATORY**: Run full test suite and verify all tests pass
-9. **MANDATORY**: Test core game mechanics manually (movement, collection, multiplayer)
-10. **MANDATORY**: Fix any failing tests before considering project complete
+3. **Set up screenshot testing infrastructure** (screenshots directory, test framework configuration)
+4. **Create single command for complete teardown/rebuild**
+5. Build core server with database connections → **Test database connectivity and basic server functionality**
+6. Implement game logic with real-time communication → **Test WebSocket connections and basic game state**
+7. Create client interface with input handling → **Test UI rendering and basic player interactions**
+8. Implement player system → **Test player creation, movement, and tracking**
+9. Implement item/money system → **Test item spawning, visibility, and collection mechanics**
+10. Implement multiplayer features → **Test real-time synchronization between multiple players**
+11. **MANDATORY**: Run comprehensive final test suite and verify all tests pass (minimum 80% pass rate)
+12. **MANDATORY**: Fix any failing tests before considering project complete
 
 ## AI Agent Operational Protocol
 
@@ -234,6 +236,48 @@ The completed project should:
 - Complete teardown/rebuild: [single command for full reset]
 - Quick restart: [quick service restart]
 - Test run: [full test suite with proper flags]
+```
+
+### 🚨 MANDATORY SECOND STEP - SCREENSHOT TESTING INFRASTRUCTURE 🚨
+
+**BEFORE ANY GAME DEVELOPMENT**: AI must set up screenshot testing infrastructure.
+
+**SCREENSHOT INFRASTRUCTURE REQUIREMENTS:**
+1. **Create screenshots directory** for test visual validation
+2. **Configure test framework** to capture screenshots automatically
+3. **Set up .gitignore** to ignore screenshots but preserve directory structure
+4. **Add screenshot capture to test setup** for both failures and successes
+5. **Configure visual regression testing** for core UI components
+
+**MANDATORY SCREENSHOT SETUP CHECKLIST:**
+- ✅ Create `screenshots/` directory in project root
+- ✅ Configure test framework to save screenshots
+- ✅ Add screenshots to .gitignore with directory preservation
+- ✅ Set up automatic screenshot capture on test failures
+- ✅ Configure success screenshots for critical game mechanics
+
+**FRAMEWORK-SPECIFIC SETUP:**
+- **Playwright**: Configure in `playwright.config.ts` with screenshot options
+- **Cypress**: Add screenshot commands to test setup  
+- **Selenium**: Configure screenshot capture in test framework setup
+
+**SCREENSHOT IMPLEMENTATION EXAMPLES:**
+- **Playwright**: `await page.screenshot({ path: 'screenshots/test-name.png' })`
+- **Cypress**: `cy.screenshot('test-name')`
+- **Selenium**: `driver.save_screenshot('screenshots/test-name.png')`
+
+**MANDATORY SCREENSHOTS FOR CRITICAL GAME MECHANICS:**
+- Money/items spawning and being visible
+- Player movement and position updates  
+- Money collection and counter updates
+- Multiple players on same screen
+- Leaderboard functionality
+
+**EXAMPLE .GITIGNORE ENTRY:**
+```
+# Screenshots directory structure preserved, but files ignored
+screenshots/
+!screenshots/.gitkeep
 ```
 
 ### Dependency Management Protocol
@@ -324,23 +368,63 @@ The completed project should:
 - **Never run tests against potentially stale environments**
 - **Report clear success/failure metrics and remaining issues**
 
-### Test Execution Requirements - ZERO TOLERANCE
-**MANDATORY**: Agent must run tests at the end of development and ensure they pass.
+### Incremental Testing Requirements - AFTER EACH MAJOR FEATURE
+**MANDATORY**: Agent must test each major feature immediately after implementation.
 
-**TEST EXECUTION PROTOCOL:**
+**INCREMENTAL TESTING PROTOCOL:**
+1. **After database/server setup**: Test basic connectivity and health endpoints
+2. **After WebSocket implementation**: Test real-time communication and game state updates
+3. **After UI creation**: Test basic rendering, controls, and user interactions
+4. **After player system**: Test player creation, movement, position tracking
+5. **After item/money system**: Test item spawning, visibility, collection detection
+6. **After multiplayer features**: Test real-time synchronization between multiple clients
+
+**FEATURE-SPECIFIC TEST REQUIREMENTS:**
+- **Database connectivity**: Connection success, table creation, basic queries
+- **WebSocket communication**: Connect, disconnect, message sending/receiving
+- **UI rendering**: Canvas display, player visualization, UI controls
+- **Player movement**: Arrow key controls, boundary checking, position updates
+- **Money/item system**: Spawning mechanics, visual display, collection detection
+- **Multiplayer sync**: Multiple players visible, real-time position updates
+
+**IF FEATURE TESTS FAIL:**
+1. **STOP development** - do not proceed to next feature
+2. **Run fresh environment reset** - use npm run reset
+3. **Investigate and fix** the specific feature issue
+4. **Re-test the feature** until it passes
+5. **Only then proceed** to the next feature implementation
+
+**🚨 ANTI-PATTERN PREVENTION:**
+- **NEVER** implement multiple features without testing each one
+- **NEVER** create workaround implementations (SQLite instead of PostgreSQL)
+- **NEVER** debug infrastructure for more than 15 minutes without reset
+- **NEVER** ignore feature testing requirements
+- **ALWAYS** test database connectivity before building game logic
+- **ALWAYS** test WebSocket connections before building client
+- **ALWAYS** test UI rendering before implementing game mechanics
+
+### Final Test Execution Requirements - ZERO TOLERANCE
+**MANDATORY**: Agent must run comprehensive final test suite after all features are implemented and tested.
+
+**FINAL TEST EXECUTION PROTOCOL:**
 1. **Fresh environment restart** before running any tests
-2. **Run complete test suite** using non-interactive flags
+2. **Run complete integrated test suite** using non-interactive flags (includes screenshot testing)
 3. **Verify test results** - minimum 80% pass rate required
 4. **Fix all failing tests** before considering project complete
-5. **Manual verification** of core game mechanics
-6. **Screenshot validation** of key functionality
 
-**CORE MECHANICS TESTING CHECKLIST:**
+**FINAL TESTING SCOPE:**
+- Integration testing of all features working together
+- Full user workflow testing (join → move → collect → leaderboard)
+- Multi-player scenario testing with screenshot evidence
+- Database persistence verification across sessions
+- Performance and stability testing
+
+**CORE MECHANICS TESTING CHECKLIST (verified by automated tests with screenshots):**
 - ✅ Player can join game with username
 - ✅ Player movement works in all directions
-- ✅ **Money/items spawn and are visible**
-- ✅ **Money/items can be collected by walking onto them**
-- ✅ **Player money total updates when collecting items**
+- ✅ **Money/items spawn and are visible** (screenshot evidence)
+- ✅ **Money/items can be collected by walking onto them** (screenshot evidence)
+- ✅ **Player money total updates when collecting items** (screenshot evidence)
 - ✅ Multiple players can join simultaneously
 - ✅ Real-time updates work between players
 - ✅ Leaderboard displays and updates
@@ -356,20 +440,9 @@ The completed project should:
 **IF TESTS FAIL:**
 1. Do NOT consider project complete
 2. Investigate and fix root cause
-3. Re-run full test suite
-4. Verify manual functionality
-5. Only complete when all tests pass AND manual verification succeeds
+3. Re-run full test suite (including screenshot validation)
+4. Only complete when all tests pass with screenshot evidence
 
-### Screenshot Testing Requirements
-- **Create screenshots directory** for test visual validation
-- **Add screenshot capture to tests** for debugging failures
-- **Configure test framework** to save screenshots on test failures
-- **Include visual regression testing** for UI components
-- **Examples by framework:**
-  - **Playwright**: `await page.screenshot({ path: 'screenshots/test-name.png' })`
-  - **Cypress**: `cy.screenshot('test-name')`
-  - **Selenium**: `driver.save_screenshot('screenshots/test-name.png')`
-- **Git ignore screenshots** but preserve directory structure
 
 ### Command Execution Safety Rules
 1. **Fresh Start Mandatory**: Always use project reset/restart commands before testing
@@ -379,8 +452,8 @@ The completed project should:
 5. **Logging Required**: All commands must include appropriate logging for monitoring
 6. **CLAUDE.md Reference**: Agent must reference CLAUDE.md before every command execution
 7. **Screenshot Documentation**: Tests must capture screenshots for debugging and validation
-8. **Test Execution Mandatory**: Agent must run full test suite before considering project complete
-9. **Manual Verification Required**: Agent must verify core game mechanics work as expected
+8. **Incremental Testing Mandatory**: Agent must test each major feature immediately after implementation
+9. **Final Test Execution Mandatory**: Agent must run comprehensive final test suite before considering project complete
 
 ## Expected Outcomes
 - High test pass rate (target 80%+ of test scenarios)
@@ -392,6 +465,7 @@ The completed project should:
 - **Screenshot testing infrastructure working**
 - **Single command complete teardown/rebuild functional**
 - **Agent follows command justification protocol consistently**
-- **🚨 CRITICAL: Full test suite executed and passing**
-- **🚨 CRITICAL: Core game mechanics manually verified working**
-- **🚨 CRITICAL: Money/item collection functionality confirmed**
+- **🚨 CRITICAL: Incremental testing completed after each major feature**
+- **🚨 CRITICAL: Final comprehensive test suite executed and passing (with screenshot evidence)**
+- **🚨 CRITICAL: Core game mechanics verified through automated tests at each development stage**
+- **🚨 CRITICAL: Money/item collection functionality confirmed with screenshots**
