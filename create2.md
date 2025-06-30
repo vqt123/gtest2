@@ -45,7 +45,7 @@ npm install -D @playwright/test playwright
 ```
 
 ### 2. Docker Services
-**docker-compose.yml:**
+**docker-compose.yml:** (Use non-standard ports to avoid conflicts)
 ```yaml
 version: '3.8'
 services:
@@ -56,19 +56,20 @@ services:
       POSTGRES_USER: gameuser
       POSTGRES_PASSWORD: gamepass
     ports:
-      - "5432:5432"
+      - "5433:5432"  # Use 5433 to avoid conflicts
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Use 6380 to avoid conflicts
 ```
 
 ### 3. Core Files Required
 
-**server.js** - Express server with Socket.IO, connects to PostgreSQL + Redis
+**server.js** - Express server with Socket.IO, connects to PostgreSQL (port 5433) + Redis (port 6380)
 **public/index.html** - Game UI with canvas and controls  
 **public/client.js** - WebSocket client with game logic
 **tests/game.spec.js** - Playwright tests with screenshots
+**reset.js** - Enhanced reset script with proper port conflict handling
 
 ### 4. Game Features
 - **Grid**: 20x20 grid with player movement (arrow keys)
@@ -95,25 +96,52 @@ CREATE TABLE game_actions (
 );
 ```
 
-### 6. Reset Script (npm run reset)
+### 6. Enhanced Reset Script (npm run reset)
 ```javascript
 #!/usr/bin/env node
+const { exec } = require('child_process');
+const { promisify } = require('util');
+const execAsync = promisify(exec);
+
 async function reset() {
-  // Kill processes by port
-  exec('lsof -ti:3000,5432,6379 | xargs kill -9 2>/dev/null || true');
+  console.log('🔄 Starting reset process...');
   
-  // Start services
-  exec('docker-compose up -d');
-  await sleep(10000); // Fixed wait
-  
-  // Initialize DB
-  await runMigrations();
-  
-  // Start server in background
-  exec('nohup node server.js > server.log 2>&1 &');
-  
-  console.log('✅ Environment ready');
+  try {
+    // CRITICAL: Stop containers FIRST to release ports
+    console.log('🧹 Cleaning up Docker containers...');
+    await execAsync('docker-compose down 2>/dev/null || true');
+    await execAsync('docker system prune -f 2>/dev/null || true');
+    
+    // Kill processes by port (use non-standard ports)
+    console.log('⏹️ Stopping existing processes...');
+    await execAsync('lsof -ti:3000 | xargs kill -9 2>/dev/null || true');
+    await execAsync('lsof -ti:5433 | xargs kill -9 2>/dev/null || true'); // Updated port
+    await execAsync('lsof -ti:6380 | xargs kill -9 2>/dev/null || true'); // Updated port
+    
+    // Start services
+    console.log('🐳 Starting Docker services...');
+    await execAsync('docker-compose up -d');
+    
+    // Fixed wait (no status checking)
+    console.log('⏳ Waiting for services...');
+    await new Promise(resolve => setTimeout(resolve, 15000));
+    
+    // Initialize database
+    console.log('🗄️ Initializing database...');
+    await runMigrations();
+    
+    // Start server in background
+    console.log('🚀 Starting server...');
+    await execAsync('nohup node server.js > server.log 2>&1 &');
+    
+    console.log('✅ Environment ready - no status checking performed');
+  } catch (error) {
+    console.error('❌ Reset failed:', error.message);
+    process.exit(1);
+  }
 }
+
+reset();
 ```
 
 ### 7. Critical Tests
@@ -155,7 +183,8 @@ test('Items spawn and can be collected', async ({ page }) => {
 - Items spawn and can be collected
 - Score updates when collecting items
 - All actions saved to database
-- Tests pass with screenshot evidence
+- **MANDATORY: All tests pass with screenshot evidence (npm run test)**
+- **MANDATORY: Agent confirms final testing completed successfully**
 
 ## 🔧 Commands Summary
 ```bash
@@ -182,7 +211,10 @@ npm run test     # Run all tests with screenshots
 
 4. **After each major feature**: "✅ CHECKPOINT: Feature implemented without status checking violations"
 
+5. **MANDATORY FINAL TEST**: "✅ CHECKPOINT FINAL: Running npm run test to verify complete system with screenshots"
+
 **USER: Watch for missing checkpoints - demand confirmation if agent skips them!**
+**CRITICAL: Agent MUST run `npm run test` at the very end - no exceptions!**
 
 ## 🛑 INSTANT VIOLATION DETECTION
 
@@ -192,6 +224,32 @@ npm run test     # Run all tests with screenshots
 - Skips compliance checkpoints
 - Uses `curl`, `docker ps`, `ps aux | grep`
 - Starts servers in foreground
+- **Manually changes ports in config files due to conflicts**
+- **Says project is "complete" without running npm run test**
+- **Updates docker-compose.yml ports manually instead of using reset script**
+
+---
+
+## 🚨 CRITICAL LESSONS FROM PREVIOUS FAILURES
+
+**Port Conflict Pattern (FORBIDDEN):**
+```bash
+# ❌ WRONG: Manual port resolution when reset fails
+docker-compose up -d  # Fails with port conflict
+# Then manually editing docker-compose.yml, server.js files
+
+# ✅ CORRECT: Reset script handles conflicts automatically
+# Use non-standard ports (5433, 6380) from the start
+# Reset script stops containers BEFORE starting new ones
+```
+
+**Reset Script Failure Protocol:**
+1. If reset fails due to port conflicts → Update reset script, don't manually change configs
+2. Docker containers must be stopped FIRST before starting new ones
+3. Use non-standard ports (5433, 6380) to avoid conflicts from the start
+
+**MANDATORY FINAL STEP:**
+Agent MUST run `npm run test` and confirm all tests pass with screenshots. Saying "project complete" without testing is a violation.
 
 ---
 
