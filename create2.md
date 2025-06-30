@@ -37,7 +37,14 @@ If agent says ANY of these phrases, immediately type "STOP":
 
 ## 📋 Implementation Steps
 
-### 1. Setup
+### 1. MANDATORY FIRST STEP: Create CLAUDE.md
+**BEFORE ANY CODING**: Agent must create CLAUDE.md file in project root with operational enforcement rules.
+
+Copy the complete CLAUDE.md template from: `/wsl-code/gtest2/CLAUDE.md`
+
+This file ensures operational compliance for all future development work on this project.
+
+### 2. Setup
 ```bash
 npm init -y
 npm install express socket.io pg redis cors dotenv
@@ -47,7 +54,44 @@ npm install -D @playwright/test playwright
 npx playwright install chromium --force
 ```
 
-### 2. Docker Services
+**CRITICAL: Update package.json scripts to prevent test hanging:**
+```json
+{
+  "scripts": {
+    "reset": "node reset.js",
+    "start": "node server.js",
+    "stop": "lsof -ti:3000 | xargs kill -9 2>/dev/null || true", 
+    "test": "playwright test --reporter=line --timeout=30000"
+  }
+}
+```
+
+**CRITICAL: Create playwright.config.js to prevent hanging:**
+```javascript
+module.exports = {
+  testDir: './tests',
+  timeout: 30000,
+  fullyParallel: false,
+  forbidOnly: !!process.env.CI,
+  retries: 0,
+  workers: 1,
+  reporter: 'line',
+  use: {
+    headless: true,
+    viewport: { width: 1280, height: 720 },
+    actionTimeout: 10000,
+    screenshot: 'only-on-failure'
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...require('@playwright/test').devices['Desktop Chrome'] }
+    }
+  ]
+};
+```
+
+### 3. Docker Services
 **docker-compose.yml:** (Use non-standard ports to avoid conflicts)
 ```yaml
 version: '3.8'
@@ -59,29 +103,29 @@ services:
       POSTGRES_USER: gameuser
       POSTGRES_PASSWORD: gamepass
     ports:
-      - "5433:5432"  # Use 5433 to avoid conflicts
+      - "5440:5432"  # Use 5440 to avoid conflicts  
   redis:
     image: redis:7-alpine
     ports:
-      - "6380:6379"  # Use 6380 to avoid conflicts
+      - "6390:6379"  # Use 6390 to avoid conflicts
 ```
 
-### 3. Core Files Required
+### 4. Core Files Required
 
-**server.js** - Express server with Socket.IO, connects to PostgreSQL (port 5433) + Redis (port 6380)
+**server.js** - Express server with Socket.IO, connects to PostgreSQL (port 5440) + Redis (port 6390)
 **public/index.html** - Game UI with canvas and controls  
 **public/client.js** - WebSocket client with game logic
 **tests/game.spec.js** - Playwright tests with screenshots
 **reset.js** - Enhanced reset script with proper port conflict handling
 
-### 4. Game Features
+### 5. Game Features
 - **Grid**: 20x20 grid with player movement (arrow keys)
 - **Players**: Join with username, visible to others
 - **Items**: Spawn randomly, collect by walking over
 - **Persistence**: Save all actions to PostgreSQL
 - **Real-time**: WebSocket updates for all players
 
-### 5. Database Schema
+### 6. Database Schema
 ```sql
 CREATE TABLE players (
   id SERIAL PRIMARY KEY,
@@ -99,7 +143,7 @@ CREATE TABLE game_actions (
 );
 ```
 
-### 6. Enhanced Reset Script (npm run reset)
+### 7. Enhanced Reset Script (npm run reset)
 ```javascript
 #!/usr/bin/env node
 const { exec } = require('child_process');
@@ -118,8 +162,8 @@ async function reset() {
     // Kill processes by port (use non-standard ports)
     console.log('⏹️ Stopping existing processes...');
     await execAsync('lsof -ti:3000 | xargs kill -9 2>/dev/null || true');
-    await execAsync('lsof -ti:5433 | xargs kill -9 2>/dev/null || true'); // Updated port
-    await execAsync('lsof -ti:6380 | xargs kill -9 2>/dev/null || true'); // Updated port
+    await execAsync('lsof -ti:5440 | xargs kill -9 2>/dev/null || true'); // Updated port
+    await execAsync('lsof -ti:6390 | xargs kill -9 2>/dev/null || true'); // Updated port
     
     // Start services
     console.log('🐳 Starting Docker services...');
@@ -147,7 +191,7 @@ async function reset() {
 reset();
 ```
 
-### 7. Critical Tests
+### 8. Critical Tests
 ```javascript
 // tests/game.spec.js
 test('Player can join and move', async ({ page }) => {
@@ -193,7 +237,7 @@ test('Items spawn and can be collected', async ({ page }) => {
 ```bash
 npm run reset    # Complete environment setup
 npx playwright install chromium --force  # Install browser (if needed)
-npm run test     # Run all tests with screenshots
+npm run test     # Run all tests with screenshots (non-interactive)
 ```
 
 ## 🚫 What NOT to do
@@ -209,17 +253,19 @@ npm run test     # Run all tests with screenshots
 
 **MANDATORY**: Agent must confirm compliance at these milestones:
 
-1. **After setup**: "✅ CHECKPOINT 1: Setup complete using only allowed commands, no status checking performed"
+1. **After CLAUDE.md creation**: "✅ CHECKPOINT CLAUDE: CLAUDE.md file created to ensure operational compliance for all future development"
 
-2. **After services start**: "✅ CHECKPOINT 2: Services started in background only, no verification attempts made"
+2. **After setup**: "✅ CHECKPOINT 1: Setup complete using only allowed commands, no status checking performed"
 
-3. **Before testing**: "✅ CHECKPOINT 3: Using npm run reset for fresh environment, no manual health checks"
+3. **After services start**: "✅ CHECKPOINT 2: Services started in background only, no verification attempts made"
 
-4. **After each major feature**: "✅ CHECKPOINT: Feature implemented without status checking violations"
+4. **Before testing**: "✅ CHECKPOINT 3: Using npm run reset for fresh environment, no manual health checks"
 
-5. **BEFORE TESTING**: "✅ CHECKPOINT BROWSER: Installing Playwright browsers with npx playwright install chromium --force"
+5. **After each major feature**: "✅ CHECKPOINT: Feature implemented without status checking violations"
 
-6. **MANDATORY FINAL TEST**: "✅ CHECKPOINT FINAL: Running npm run test to verify complete system with screenshots"
+6. **BEFORE TESTING**: "✅ CHECKPOINT BROWSER: Installing Playwright browsers with npx playwright install chromium --force"
+
+7. **MANDATORY FINAL TEST**: "✅ CHECKPOINT FINAL: Running npm run test to verify complete system with screenshots"
 
 **USER: Watch for missing checkpoints - demand confirmation if agent skips them!**
 **CRITICAL: Agent MUST run `npm run test` at the very end - no exceptions!**
