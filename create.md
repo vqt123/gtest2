@@ -11,15 +11,31 @@
 **FORBIDDEN COMMANDS - NEVER RUN THESE:**
 - Development server commands (without nohup/background flags) - WILL HANG TERMINAL
   - Examples: `npm run dev`, `yarn dev`, `pnpm dev`, `cargo run`, `go run`, `python app.py`
-- `curl` (for status checking - use restart instead)
-- `ps aux | grep` (for status checking - use restart instead) 
-- Container status commands (for status checking - use restart instead)
-  - Examples: `docker-compose ps`, `docker ps`, `kubectl get pods`
+- **CRITICAL STATUS CHECKING VIOLATIONS** - Use restart instead of ANY status verification:
+  - `curl` (health checks, API testing, endpoint verification)
+  - `wget` (endpoint testing, connectivity checks)
+  - `nc` or `netcat` (port testing, connectivity checks)
+  - `telnet` (port testing, service availability)
+  - `ping` (service availability testing)
+  - HTTP clients (axios, fetch, requests) for health checking
+  - Database connection testing after container start
+  - Service availability polling/waiting loops
+- **PROCESS/CONTAINER STATUS CHECKING** - Use restart instead:
+  - `ps aux | grep` (process status checking)
+  - `pgrep` (process identification)
+  - `docker ps` (container status)
+  - `docker-compose ps` (service status)
+  - `kubectl get pods` (k8s status)
+  - `systemctl status` (service status)
 - **CRITICAL**: Global process killing that affects IDE/Editor
   - `pkill -f "node"` (kills Node.js-based IDEs like VSCode, Cursor)
   - `pkill -f "python"` (kills Python-based IDEs)
   - `pkill -f "java"` (kills Java-based IDEs like IntelliJ)
   - `killall [process]` (global killing)
+- **PORT CONFLICT PATTERNS** - Use automated detection instead:
+  - Manual port checking before service start
+  - Interactive port conflict resolution
+  - Hardcoded port assignments without conflict detection
 - Any command that starts servers in foreground
 - Any command for "checking status" - ALWAYS restart instead
 
@@ -37,11 +53,28 @@
 **🔍 VIOLATION DETECTION TRIGGERS (User: Watch for these!):**
 - Agent runs commands without stating justification first
 - Agent uses forbidden commands from the list above
-- Agent says "let me check if..." or "let me see if..." (status checking)
-- Agent runs `npm run dev` without background flags
-- Agent uses `curl`, `ps aux | grep`, `docker ps` for status checking
-- Commands hang and don't return to prompt
-- Terminal becomes unresponsive
+- **CRITICAL STATUS CHECKING PHRASES** - These indicate violations:
+  - "let me check if..." or "let me see if..." (status checking)
+  - "let me test the connection" (forbidden verification)
+  - "let me verify the server is running" (status checking)
+  - "wait for services to be ready" (polling/waiting)
+  - "check if the database is accessible" (connection testing)
+  - "ensure the service is healthy" (health checking)
+- **FORBIDDEN COMMAND PATTERNS:**
+  - `curl`, `wget`, `nc`, `telnet` for any verification
+  - `ps aux | grep`, `docker ps`, `docker-compose ps`
+  - Database connection scripts run immediately after container start
+  - HTTP requests to health endpoints
+  - Port testing or service availability checks
+- **PROCESS MANAGEMENT VIOLATIONS:**
+  - Commands that hang and don't return to prompt
+  - Terminal becomes unresponsive
+  - Server started but not properly backgrounded
+  - Multiple status checks in sequence
+- **PORT CONFLICT INDICATORS:**
+  - Manual port changes in config files
+  - "port already in use" errors not handled automatically
+  - Interactive port conflict resolution
 
 **🛑 INTERRUPTION PROCEDURES (User: Do this immediately!):**
 1. **Press Ctrl+C** to interrupt hanging commands
@@ -56,6 +89,66 @@
 - After hanging: Ctrl+C, then demand fresh restart approach
 - After repeated violations: Request complete session restart
 
+## 🚨 CRITICAL: Learned Violations from Previous Failures 🚨
+
+**THESE EXACT PATTERNS CAUSED PREVIOUS PROJECT FAILURES:**
+
+### **Status Checking Violation Example**
+```bash
+# ❌ VIOLATION PATTERN (caused previous failure):
+nohup node server.js > logs/server.log 2>&1 &
+sleep 5 && curl -s http://localhost:3000/health  # FORBIDDEN!
+
+# ✅ CORRECT PATTERN:
+npm run reset  # Trust the reset process completely
+# No status checking - if reset completes, services are ready
+```
+
+### **Port Conflict Resolution Violation**
+```bash
+# ❌ VIOLATION PATTERN (caused previous failure):
+# Manual port changes in docker-compose.yml and .env
+# Interactive conflict resolution
+# "port already in use" errors requiring manual intervention
+
+# ✅ CORRECT PATTERN:
+# Automated port detection in reset script
+auto_assign_ports()  # Handles conflicts automatically
+```
+
+### **Background Process Management Violation**
+```bash
+# ❌ VIOLATION PATTERN (caused previous failure):
+nohup node server.js > logs/server.log 2>&1 &  # Start server
+curl -s http://localhost:3000/health | jq .      # Then check status - FORBIDDEN!
+
+# ✅ CORRECT PATTERN:
+npm run reset     # Complete environment setup
+npm run start     # Server starts in background
+# NO status checking - trust the process
+```
+
+### **Dependency Management Violation**
+```bash
+# ❌ VIOLATION PATTERN (caused previous failure):
+# Missing dotenv in package.json
+# Runtime dependency errors during execution
+# "Cannot find module" errors
+
+# ✅ CORRECT PATTERN:
+# Pre-validate all dependencies in reset script
+validate_dependencies()  # Check before any execution
+```
+
+**CRITICAL LESSON**: The previous agent violated core rules by:
+1. **Using curl for health checks** after starting services
+2. **Manually resolving port conflicts** instead of automation
+3. **Starting server then immediately checking status** (forbidden pattern)
+4. **Missing dependency validation** causing runtime failures
+5. **Not using npm run reset** for fresh environment
+
+**PREVENTION**: Every command must be justified against these learned violations.
+
 ## Core Operational Rules - ZERO TOLERANCE
 1. **Command Logging**: Log all operations for transparency and debugging
 2. **Never Skip Components**: Complete all tasks, tests, and dependencies
@@ -67,6 +160,21 @@
 
 **REQUIRED JUSTIFICATION FORMAT:**
 Before every command, state: "Operational justification: [rule] - [command purpose]"
+
+**ENHANCED JUSTIFICATION EXAMPLES (Learned from Previous Failures):**
+```bash
+# ✅ CORRECT JUSTIFICATIONS:
+"Operational justification: Fresh Environment - npm run reset to ensure clean state (no status checking)"
+"Operational justification: Background Processes - npm run start to launch server in background (no verification)"
+"Operational justification: Automated Port Detection - using reset script port assignment"
+"Operational justification: Dependency Validation - pre-build dependency check to prevent runtime errors"
+
+# ❌ VIOLATION JUSTIFICATIONS (These indicate the agent will violate rules):
+"Let me check if the server is running" (STATUS CHECKING VIOLATION)
+"I'll test the database connection" (VERIFICATION VIOLATION)  
+"Let me see if the services are ready" (POLLING VIOLATION)
+"I'll verify the health endpoint" (HEALTH CHECK VIOLATION)
+```
 
 **TEMPLATE JUSTIFICATIONS (copy-paste these):**
 - ✅ "Operational justification: Fresh Environment - [reset command] to ensure clean state"
@@ -287,15 +395,62 @@ screenshots/
 - Test compatibility before proceeding with dependent installations
 - Guide platform-specific installation when needed
 
+#### **CRITICAL: Automated Port Conflict Detection Protocol**
+**MANDATORY**: All reset scripts must include automated port conflict detection and resolution.
+
+**REQUIRED PORT CONFLICT HANDLING:**
+```bash
+# CORRECT: Automated port conflict detection
+check_port_conflicts() {
+    POSTGRES_PORT=5432
+    REDIS_PORT=6379
+    SERVER_PORT=3000
+    
+    # Auto-increment ports if conflicts detected
+    while lsof -ti:$POSTGRES_PORT >/dev/null 2>&1; do
+        POSTGRES_PORT=$((POSTGRES_PORT + 1))
+    done
+    
+    # Update config files automatically
+    sed -i "s/DB_PORT=.*/DB_PORT=$POSTGRES_PORT/" .env
+    sed -i "s/\"5432:5432\"/\"$POSTGRES_PORT:5432\"/" docker-compose.yml
+}
+```
+
+**FORBIDDEN PORT HANDLING:**
+- ❌ Manual port changes in config files
+- ❌ Interactive port conflict resolution
+- ❌ Hardcoded port assignments without detection
+- ❌ Error messages asking user to resolve conflicts
+
+#### **CRITICAL: Pre-Build Dependency Validation**
+**MANDATORY**: Validate all dependencies before any build/start operations.
+
+**REQUIRED DEPENDENCY CHECKS:**
+```bash
+# CORRECT: Pre-build validation
+validate_dependencies() {
+    # Check package.json completeness
+    node -e "const pkg = require('./package.json'); 
+             const required = ['express', 'socket.io', 'pg', 'redis', 'dotenv', 'cors'];
+             const missing = required.filter(dep => !pkg.dependencies[dep]);
+             if (missing.length) { console.error('Missing:', missing); process.exit(1); }"
+    
+    # Verify system dependencies
+    command -v docker >/dev/null || { echo "Docker required"; exit 1; }
+    command -v docker-compose >/dev/null || { echo "Docker Compose required"; exit 1; }
+}
+```
+
 #### Service Conflicts
-- Detect and handle conflicts between development and system services
-- Provide clear resolution guidance for manual intervention
-- Implement automated conflict detection in reset scripts
+- **AUTOMATED**: Detect and handle conflicts between development and system services
+- **SCRIPTED**: Implement automated conflict detection in reset scripts
+- **NO MANUAL INTERVENTION**: Scripts must resolve conflicts automatically
 
 #### Platform-Specific Requirements
 - Install system-level dependencies with appropriate privileges
 - Handle platform differences in package management
-- Verify successful installation before proceeding
+- **VALIDATE**: Verify successful installation before proceeding with automated testing
 
 ### Error Resolution Protocol
 
@@ -304,37 +459,203 @@ screenshots/
 - Address missing declarations and type handling
 - Verify all imports and dependencies
 
+#### **CRITICAL: Process Cleanup Verification Protocol**
+**MANDATORY**: Comprehensive process and port cleanup with verification.
+
+**REQUIRED CLEANUP PATTERNS:**
+```bash
+# CORRECT: Targeted process cleanup with verification
+cleanup_processes() {
+    # Kill specific project processes by port
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    lsof -ti:5432,5433 | xargs kill -9 2>/dev/null || true
+    lsof -ti:6379,6380 | xargs kill -9 2>/dev/null || true
+    
+    # Stop containers by project name
+    docker-compose down --remove-orphans
+    docker container prune -f
+    
+    # Verify cleanup completed
+    if lsof -ti:3000,5432,5433,6379,6380 >/dev/null 2>&1; then
+        echo "ERROR: Cleanup failed - ports still in use"
+        exit 1
+    fi
+}
+```
+
+**FORBIDDEN CLEANUP PATTERNS:**
+- ❌ Global process killing (`pkill -f node`, `killall`)
+- ❌ Manual process identification
+- ❌ Interactive cleanup requiring user input
+
 #### Test Failures
-1. Attempt fresh environment reset first
+1. **MANDATORY**: Attempt fresh environment reset first
 2. If issues persist, stop and report specific details
-3. Never mask fundamental issues with timing adjustments
+3. **NEVER** mask fundamental issues with timing adjustments
+4. **NEVER** debug for more than 15 minutes without reset
 
-#### Service Conflicts
-- Implement automated detection and resolution where possible
-- Guide manual resolution for system-level conflicts
-- Test service availability before dependent operations
+#### **CRITICAL: Background Process Management Protocol**
+**MANDATORY**: Strict separation between service startup and verification.
 
-### Reset Script Requirements - CRITICAL FOR PREVENTING LOCKUPS
-- **Target specific processes rather than global termination** - NEVER use global kills that affect IDE
-- **Detect and handle container conflicts automatically**
-- **Guide resolution of system service conflicts**
-- **Clean and rebuild environment completely**
-- **NEVER auto-start development servers in foreground** - Use background flags or separate start commands
-- **Include comprehensive operation logging**
-- **Scripts must complete and return to prompt** - No hanging processes
-- **Use background execution (nohup &, screen, tmux) for any long-running processes**
+**REQUIRED BACKGROUND PROCESS PATTERNS:**
+```bash
+# CORRECT: Start services in background, rely on reset script validation
+start_services() {
+    docker-compose up -d postgres redis
+    sleep 10  # Fixed wait, no polling
+    nohup node server.js > logs/server.log 2>&1 &
+    echo "Services started in background - use 'npm run reset' to verify"
+}
+```
 
-### Single Command Operation Requirements - MANDATORY
-**MUST CREATE**: One command that performs complete teardown and rebuild of entire environment.
+**FORBIDDEN POST-START VERIFICATION:**
+- ❌ `curl` health checks after service start
+- ❌ Database connection testing after container start
+- ❌ Port polling or availability checking
+- ❌ Service status verification
+- ❌ "Wait for services to be ready" loops
 
-**SINGLE COMMAND SPECIFICATIONS:**
-- **Command name**: `npm run reset` (Node.js) or equivalent for chosen stack
-- **Complete teardown**: Kill all processes, remove containers, clean volumes, clear logs
-- **Environment rebuild**: Restart services, initialize databases, build code
-- **Dependency check**: Verify all services are healthy before completion
-- **Background execution**: Start servers in background, never hang terminal
-- **Comprehensive logging**: Log every step for debugging
-- **Return to prompt**: Command must complete and return control
+**SERVICE CONFLICT RESOLUTION:**
+- **AUTOMATED**: Scripts detect and resolve conflicts automatically
+- **NO MANUAL STEPS**: Never require user intervention for conflicts
+- **NO STATUS CHECKING**: Never test service availability - use restart approach
+
+### **🚨 CRITICAL: Enhanced Reset Script Requirements**
+
+**MANDATORY RESET SCRIPT COMPONENTS:**
+
+#### **1. Automated Port Conflict Detection and Resolution**
+```bash
+# REQUIRED: Dynamic port assignment
+auto_assign_ports() {
+    find_free_port() {
+        local port=$1
+        while lsof -ti:$port >/dev/null 2>&1; do
+            port=$((port + 1))
+        done
+        echo $port
+    }
+    
+    export POSTGRES_PORT=$(find_free_port 5432)
+    export REDIS_PORT=$(find_free_port 6379)
+    export SERVER_PORT=$(find_free_port 3000)
+    
+    # Auto-update all config files
+    update_config_ports
+}
+```
+
+#### **2. Comprehensive Dependency Validation**
+```bash
+# REQUIRED: Pre-build validation
+validate_environment() {
+    # System dependencies
+    command -v docker >/dev/null || { echo "Missing: docker"; exit 1; }
+    command -v node >/dev/null || { echo "Missing: node"; exit 1; }
+    
+    # Package dependencies
+    npm list express socket.io pg redis dotenv cors >/dev/null 2>&1 || {
+        echo "Installing missing dependencies..."
+        npm install
+    }
+}
+```
+
+#### **3. Targeted Process Cleanup (IDE-Safe)**
+```bash
+# REQUIRED: Safe process termination
+cleanup_safely() {
+    # Target specific ports only
+    for port in 3000 5432 5433 6379 6380; do
+        lsof -ti:$port | xargs kill -9 2>/dev/null || true
+    done
+    
+    # Project-specific containers only
+    docker-compose down --remove-orphans 2>/dev/null || true
+    
+    # Verify cleanup success
+    verify_cleanup_complete
+}
+```
+
+#### **4. Background Service Management**
+```bash
+# REQUIRED: Proper background execution
+start_services_background() {
+    docker-compose up -d postgres redis
+    sleep 10  # Fixed wait, no status checking
+    
+    nohup node server.js > logs/server.log 2>&1 &
+    echo $! > .server.pid  # Save PID for cleanup
+    
+    echo "Services started - environment ready"
+    # NO status checking - trust the restart process
+}
+```
+
+**CRITICAL REQUIREMENTS:**
+- **Target specific processes** - NEVER use global kills that affect IDE
+- **Automate port conflict resolution** - NO manual config changes
+- **Validate dependencies pre-build** - Prevent runtime failures
+- **Background service management** - NO foreground hanging
+- **Comprehensive logging** - All operations logged
+- **Scripts return to prompt** - NO hanging processes
+- **NO STATUS CHECKING** - Trust restart process completely
+
+### **🚨 MANDATORY: Single Command Operation Requirements**
+
+**ENHANCED SINGLE COMMAND SPECIFICATIONS:**
+
+#### **Complete Reset Command Structure**
+```bash
+#!/usr/bin/env node
+// REQUIRED: npm run reset implementation
+const { exec, spawn } = require('child_process');
+const fs = require('fs');
+
+async function fullReset() {
+    console.log('🔄 Starting complete environment reset...');
+    
+    // 1. Automated port conflict detection
+    await autoAssignPorts();
+    
+    // 2. Comprehensive cleanup (IDE-safe)
+    await cleanupSafely();
+    
+    // 3. Dependency validation
+    await validateEnvironment();
+    
+    // 4. Service startup (background)
+    await startServicesBackground();
+    
+    // 5. Database initialization
+    await initializeDatabase();
+    
+    // 6. Build verification
+    await buildProject();
+    
+    console.log('✅ Environment reset complete - ready for development');
+    process.exit(0);  // Return to prompt
+}
+```
+
+**MANDATORY RESET FEATURES:**
+- **Automated port detection**: No manual port configuration
+- **Complete teardown**: Kill processes, remove containers, clean volumes
+- **Dependency validation**: Pre-validate all requirements
+- **Background service startup**: No hanging processes
+- **Database initialization**: Automated schema setup
+- **Build verification**: Ensure compilation success
+- **Return to prompt**: Command completes and exits
+- **NO STATUS CHECKING**: Trust the reset process completely
+
+**FORBIDDEN IN RESET SCRIPTS:**
+- ❌ Health check polling after service start
+- ❌ Interactive configuration
+- ❌ Manual port conflict resolution
+- ❌ Global process killing
+- ❌ Foreground server startup
+- ❌ Status verification commands
 
 **IMPLEMENTATION EXAMPLES:**
 - **Node.js**: `npm run reset` calls script that does full teardown/rebuild
@@ -355,18 +676,89 @@ screenshots/
 9. Verify everything is working
 10. Return to prompt with status message
 
-### Development Server Management
-- **Development servers MUST run in background during testing**
-- **Use separate commands for starting servers interactively vs testing**
-- **Scripts should prepare environment but not start hanging processes**
-- **Provide clear instructions for manual server startup when needed**
+### **🚨 CRITICAL: Development Server Management Protocol**
 
-### Testing Protocol - MANDATORY EXECUTION
-- **ALWAYS use fresh restart before testing** - No status checking allowed
-- **Use non-interactive flags to prevent hanging** - Examples: `--reporter=line`, `--tb=short`, `--quiet`, `-v`
-- **Start servers in background before running tests**
-- **Never run tests against potentially stale environments**
-- **Report clear success/failure metrics and remaining issues**
+#### **Background Server Requirements**
+```bash
+# CORRECT: Background server with proper management
+start_dev_server() {
+    # Kill existing server processes
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+    
+    # Start in background with logging
+    nohup node server.js > logs/server.log 2>&1 &
+    echo $! > .server.pid
+    
+    echo "Development server started in background (PID: $(cat .server.pid))"
+    echo "Logs: tail -f logs/server.log"
+    echo "Stop: npm run stop"
+}
+
+# CORRECT: Clean server shutdown
+stop_dev_server() {
+    if [ -f .server.pid ]; then
+        kill $(cat .server.pid) 2>/dev/null || true
+        rm .server.pid
+    fi
+    lsof -ti:3000 | xargs kill -9 2>/dev/null || true
+}
+```
+
+**MANDATORY SERVER MANAGEMENT RULES:**
+- **Always background**: Use `nohup ... &` for server processes
+- **PID tracking**: Save process IDs for clean shutdown
+- **Separate start/stop commands**: `npm run start`, `npm run stop`
+- **No foreground execution**: Scripts never hang terminal
+- **No status checking**: Never verify server health after start
+
+**FORBIDDEN SERVER PATTERNS:**
+- ❌ `node server.js` (foreground execution)
+- ❌ `npm run dev` without background flags
+- ❌ Health checks after server start
+- ❌ Polling for server readiness
+- ❌ Interactive server management
+
+### **🚨 MANDATORY: Enhanced Testing Protocol**
+
+#### **Pre-Test Environment Preparation**
+```bash
+# REQUIRED: Fresh environment before every test run
+setup_test_environment() {
+    echo "🔄 Preparing fresh test environment..."
+    
+    # 1. Complete reset (no status checking)
+    npm run reset
+    
+    # 2. Wait for services (fixed time, no polling)
+    sleep 15
+    
+    # 3. Start application in background
+    npm run start
+    
+    echo "✅ Test environment ready"
+}
+```
+
+**MANDATORY TEST EXECUTION RULES:**
+1. **Fresh restart ALWAYS**: Use `npm run reset` before every test
+2. **Non-interactive flags**: Prevent hanging with proper flags
+3. **Background services**: All servers run in background during tests
+4. **Fixed timing**: Use sleep, never polling or status checks
+5. **Clean reporting**: Clear pass/fail metrics only
+
+**REQUIRED NON-INTERACTIVE FLAGS:**
+- **Playwright**: `--reporter=line --headed=false`
+- **Jest**: `--verbose --no-watch --forceExit`
+- **Mocha**: `--reporter spec --timeout 10000`
+- **npm test**: `-- --reporter=line`
+
+**FORBIDDEN TEST PATTERNS:**
+- ❌ Status checking before test execution
+- ❌ Health endpoint verification
+- ❌ Service availability polling
+- ❌ Interactive test runners
+- ❌ Tests against potentially stale environments
+- ❌ Manual test environment setup
 
 ### Incremental Testing Requirements - AFTER EACH MAJOR FEATURE
 **MANDATORY**: Agent must test each major feature immediately after implementation.
@@ -388,20 +780,28 @@ screenshots/
 - **Multiplayer sync**: Multiple players visible, real-time position updates
 
 **IF FEATURE TESTS FAIL:**
-1. **STOP development** - do not proceed to next feature
-2. **Run fresh environment reset** - use npm run reset
-3. **Investigate and fix** the specific feature issue
-4. **Re-test the feature** until it passes
-5. **Only then proceed** to the next feature implementation
+1. **STOP development immediately** - do not proceed to next feature
+2. **Run fresh environment reset** - use `npm run reset` (no status checking)
+3. **Wait fixed time** - sleep 15 seconds, no polling
+4. **Re-run test once** - if still fails, investigate code issue
+5. **Fix root cause** - never mask with workarounds or timeouts
+6. **Verify fix with fresh reset** - run `npm run reset` then test again
+7. **Only proceed** when feature passes consistently
 
-**🚨 ANTI-PATTERN PREVENTION:**
+**🚨 ENHANCED ANTI-PATTERN PREVENTION:**
 - **NEVER** implement multiple features without testing each one
 - **NEVER** create workaround implementations (SQLite instead of PostgreSQL)
 - **NEVER** debug infrastructure for more than 15 minutes without reset
 - **NEVER** ignore feature testing requirements
-- **ALWAYS** test database connectivity before building game logic
-- **ALWAYS** test WebSocket connections before building client
-- **ALWAYS** test UI rendering before implementing game mechanics
+- **NEVER** use status checking to verify feature functionality
+- **NEVER** poll or wait for services to be "ready"
+- **NEVER** implement health checks or connectivity testing
+- **NEVER** manually resolve port conflicts
+- **NEVER** start services in foreground during development
+- **ALWAYS** use `npm run reset` for clean environment
+- **ALWAYS** trust the reset process completely
+- **ALWAYS** use background service execution
+- **ALWAYS** validate dependencies before building
 
 ### Final Test Execution Requirements - ZERO TOLERANCE
 **MANDATORY**: Agent must run comprehensive final test suite after all features are implemented and tested.
