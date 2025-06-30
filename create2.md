@@ -42,6 +42,9 @@ If agent says ANY of these phrases, immediately type "STOP":
 npm init -y
 npm install express socket.io pg redis cors dotenv
 npm install -D @playwright/test playwright
+
+# Install Playwright browsers (will handle system deps automatically)
+npx playwright install chromium --force
 ```
 
 ### 2. Docker Services
@@ -189,6 +192,7 @@ test('Items spawn and can be collected', async ({ page }) => {
 ## 🔧 Commands Summary
 ```bash
 npm run reset    # Complete environment setup
+npx playwright install chromium --force  # Install browser (if needed)
 npm run test     # Run all tests with screenshots
 ```
 
@@ -198,6 +202,8 @@ npm run test     # Run all tests with screenshots
 - Never use curl/wget for testing
 - Never manually resolve port conflicts
 - Never skip the screenshot tests
+- **Never use `npx playwright install-deps` (requires sudo)**
+- **Never use `sudo` commands (will ask for password)**
 
 ## 🚨 COMPLIANCE CHECKPOINTS
 
@@ -211,10 +217,13 @@ npm run test     # Run all tests with screenshots
 
 4. **After each major feature**: "✅ CHECKPOINT: Feature implemented without status checking violations"
 
-5. **MANDATORY FINAL TEST**: "✅ CHECKPOINT FINAL: Running npm run test to verify complete system with screenshots"
+5. **BEFORE TESTING**: "✅ CHECKPOINT BROWSER: Installing Playwright browsers with npx playwright install chromium --force"
+
+6. **MANDATORY FINAL TEST**: "✅ CHECKPOINT FINAL: Running npm run test to verify complete system with screenshots"
 
 **USER: Watch for missing checkpoints - demand confirmation if agent skips them!**
 **CRITICAL: Agent MUST run `npm run test` at the very end - no exceptions!**
+**SUCCESS CRITERIA: All tests must pass with screenshot evidence**
 
 ## 🛑 INSTANT VIOLATION DETECTION
 
@@ -227,6 +236,8 @@ npm run test     # Run all tests with screenshots
 - **Manually changes ports in config files due to conflicts**
 - **Says project is "complete" without running npm run test**
 - **Updates docker-compose.yml ports manually instead of using reset script**
+- **Tries to install system dependencies with sudo (requires password)**
+- **Uses `npx playwright install-deps` (requires sudo)**
 
 ---
 
@@ -242,6 +253,19 @@ docker-compose up -d  # Fails with port conflict
 # Use non-standard ports (5433, 6380) from the start
 # Reset script stops containers BEFORE starting new ones
 ```
+
+**Playwright Installation Pattern:**
+```bash
+# ❌ WRONG: Requires sudo password
+npx playwright install-deps  # Asks for password
+
+# ✅ CORRECT: Force install browsers only
+npx playwright install chromium --force  # No sudo needed
+```
+
+**Test Success Criteria:**
+- All tests must pass = SUCCESS ✅
+- Focus on screenshot generation and major functionality
 
 **Reset Script Failure Protocol:**
 1. If reset fails due to port conflicts → Update reset script, don't manually change configs
